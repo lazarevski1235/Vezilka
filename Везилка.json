@@ -1,0 +1,403 @@
+{
+  "name": "Везилка",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyCH7LNtp0T60oogerhdKNkmu1fdzZuaBFs"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Analyze this document completely. Describe ALL text, ALL images, diagrams, charts, inferred meaning, context, intended audience, skill level, and subject matter in extreme detail.\"\n        },\n        {\n          \"inlineData\": {\n            \"mimeType\": \"application/pdf\",\n            \"data\": \"{{$json.base64}}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        352,
+        496
+      ],
+      "id": "946f4506-499d-44fe-af15-8685eec87141",
+      "name": "Gemini Direct File Analysis"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "PDF",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "163ca978-b718-41e5-92f7-34afaf2eab5f"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "87d7af5f-2d2d-46d6-9f64-696740261645",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "=DOCUMENT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8d72e84b-604d-45a6-b67c-1ab44f91c10c",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "PPTX",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9fba9021-9382-459a-b6cb-cae7646f6574",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "IMAGE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -912,
+        448
+      ],
+      "id": "d7d1bb06-9ed6-49de-98ff-a6847dc7da8b",
+      "name": "Check the kind of document we got"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-course-file",
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1296,
+        480
+      ],
+      "id": "889d0f45-801a-41dc-80d2-d1af47758908",
+      "name": "Send document",
+      "webhookId": "0972650d-770b-417f-aecc-51594e6e9fbb"
+    },
+    {
+      "parameters": {
+        "jsCode": "// get uploaded file\nconst item = $input.first();\n\n// detect binary key\nconst binaryKeys = Object.keys(item.binary || {});\nif (binaryKeys.length === 0) {\n  throw new Error(\"No binary data found on this item!\");\n}\n\nconst binaryKey = binaryKeys[0]; // take the first uploaded file\nconst fileName = item.binary[binaryKey].fileName;\n\n// extract extension\nconst ext = fileName.split('.').pop().toLowerCase();\n\n// map to type\nlet type;\nif (ext === 'pdf') {\n  type = 'PDF';\n} else if (['docx', 'xlsx', 'csv', 'txt', 'html'].includes(ext)) {\n  type = 'DOCUMENT';\n} else if (['jpg','jpeg','png','tiff','bmp', 'avif'].includes(ext)) {\n  type = 'IMAGE';\n} else if (ext === 'pptx') {\n  type = 'PPTX';\n} else {\n  type = 'UNKNOWN';\n}\n\n// return normalized data, include binary for next nodes\nreturn [\n  {\n    json: {\n      fileName,\n      extension: ext,\n      type\n    },\n    binary: {\n      data: item.binary[binaryKey]\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1088,
+        480
+      ],
+      "id": "78c04f4b-6a2e-4edf-a236-8f1168cec1ac",
+      "name": "Get the extension"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\n\n// detect the first binary key\nconst binaryKey = Object.keys(item.binary || {})[0];\nif (!binaryKey) throw new Error(\"No binary data found.\");\n\n// get the PDF as a proper Base64 string\nconst pdfBase64 = await this.helpers.getBinaryDataBuffer(0, binaryKey)\n  .then(buffer => buffer.toString('base64'));\n\n// return JSON\nreturn [\n  {\n    json: {\n      fileName: item.binary[binaryKey].fileName,\n      type: 'PDF',\n      base64: pdfBase64\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        208
+      ],
+      "id": "7ad63c50-e6f1-4a7d-94e3-4a87119c1d10",
+      "name": "From .pdf to base64"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\n\n// detect the first binary key\nconst binaryKey = Object.keys(item.binary || {})[0];\nif (!binaryKey) throw new Error(\"No binary data found.\");\n\n// convert the file to Base64\nconst fileBase64 = await this.helpers.getBinaryDataBuffer(0, binaryKey)\n  .then(buffer => buffer.toString('base64'));\n\n// return JSON\nreturn [\n  {\n    json: {\n      fileName: item.binary[binaryKey].fileName,\n      type: 'DOCUMENT',\n      base64: fileBase64\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        352
+      ],
+      "id": "d84fa4c2-a3c8-41dd-a71d-c56f7c01e5b1",
+      "name": "From document to base64"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\n\nreturn [\n  {\n    json: {\n      fileName: item.json.fileName,\n      type: item.json.type || item.json.fileName.split('.').pop().toUpperCase(),\n      text: null,\n      images: [],\n      base64: item.json.base64\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        496
+      ],
+      "id": "08392ccd-b412-4e47-b318-85b218787221",
+      "name": "Format before gemini"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\n\n// detect the binary key\nconst binaryKey = Object.keys(item.binary || {})[0];\nif (!binaryKey) throw new Error(\"No binary data found.\");\n\n// convert presentation to base64\nconst pptxBase64 = await this.helpers\n  .getBinaryDataBuffer(0, binaryKey)\n  .then(buffer => buffer.toString('base64'));\n\n// return JSON\nreturn [\n  {\n    json: {\n      fileName: item.binary[binaryKey].fileName,\n      type: \"PPTX\",\n      text: null,\n      images: [],\n      base64: pptxBase64\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        496
+      ],
+      "id": "5bf02a25-e6c2-458f-9fcf-aff72f07c059",
+      "name": "From .pptx to base64"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyCH7LNtp0T60oogerhdKNkmu1fdzZuaBFs"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Analyze this image completely. Describe all visible text, diagrams, charts, objects, labels, symbols, colors, spatial relationships, and any inferred meaning or context in extreme detail. If the image contains educational content such as diagrams, notes, slides, charts, or illustrations, explain them clearly and describe how they relate to the subject matter.\"\n        },\n        {\n          \"inlineData\": {\n            \"mimeType\": \"image/png\",\n            \"data\": \"{{$json.base64}}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -288,
+        704
+      ],
+      "id": "cabca2e6-a4ca-4e71-bd33-0b9b5e61213c",
+      "name": "Gemini Image Analysis1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item;\n\nconst binaryField = Object.keys(item.binary)[0];\n\n// get real base64 from n8n binary storage\nconst buffer = await this.helpers.getBinaryDataBuffer(0, binaryField);\nconst base64Data = buffer.toString('base64');\n\nreturn [\n  {\n    json: {\n      base64: base64Data,\n      mimeType: item.binary[binaryField].mimeType,\n      fileName: item.binary[binaryField].fileName\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        704
+      ],
+      "id": "669bae8f-3942-4102-a2d8-1dad6da0db2c",
+      "name": "From image into base64"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gemini Direct File Analysis": {
+      "main": [
+        []
+      ]
+    },
+    "Check the kind of document we got": {
+      "main": [
+        [
+          {
+            "node": "From .pdf to base64",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "From document to base64",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "From .pptx to base64",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "From image into base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send document": {
+      "main": [
+        [
+          {
+            "node": "Get the extension",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get the extension": {
+      "main": [
+        [
+          {
+            "node": "Check the kind of document we got",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From .pdf to base64": {
+      "main": [
+        [
+          {
+            "node": "Format before gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From document to base64": {
+      "main": [
+        [
+          {
+            "node": "Format before gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format before gemini": {
+      "main": [
+        [
+          {
+            "node": "Gemini Direct File Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From .pptx to base64": {
+      "main": [
+        [
+          {
+            "node": "Format before gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From image into base64": {
+      "main": [
+        [
+          {
+            "node": "Gemini Image Analysis1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "be8c307f-bb17-43c8-bd5b-4801cfd15f64",
+  "meta": {
+    "instanceId": "5ff2b29ff59393f4348ce441457d7055afd61c2cfd6a64dfa6cae5c69cd77f3a"
+  },
+  "id": "yyVeC2rYOSi90R2Y",
+  "tags": []
+}
