@@ -1,0 +1,187 @@
+{
+  "updatedAt": "2026-03-01T21:57:58.100Z",
+  "createdAt": "2026-02-28T11:34:22.514Z",
+  "id": "9VNl2TMogjb7SzJJ",
+  "name": "course_generation",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Generate course",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "level",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "beginner"
+                  },
+                  {
+                    "option": "intermediate"
+                  },
+                  {
+                    "option": "advanced"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Course materials",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -352,
+        0
+      ],
+      "id": "d9ca2a6a-7649-43f9-b2e2-e27f0a2292cc",
+      "name": "On form submission",
+      "webhookId": "8ff1ba87-900d-4484-bae5-0786fef7c968"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Course_materials",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        0
+      ],
+      "id": "cc3cb4e3-86cb-4d79-bced-2e8cc674a7a2",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a course at a {{ $('On form submission').item.json.level }} difficulty level using the following source material:\n\n{{ $json.text }}",
+        "options": {
+          "systemMessage": "You are an expert instructor. Your job is to create a Google Colab compatible Jupyter Notebook (.ipynb) based on the provided source material. Generate the course strictlyin Macedonian.\n\nThe notebook must be perfectly formatted JSON following the .ipynb specification. It must contain a mix of markdown cells for explanations and code cells for exercises. Output ONLY valid JSON, nothing else."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        64,
+        0
+      ],
+      "id": "0b53533e-b50e-4717-add6-46cb52582f3d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "let rawData = $input.first().json.output;\n// $input.first().json.output\nrawData = rawData.replace(/```json/g, '').replace(/```/g, '').trim();\n\nconst buffer = Buffer.from(rawData, 'utf8');\n\nreturn [\n  {\n    json: {\n      fileName: \"generated_course.ipynb\"\n    },\n    binary: {\n      data: {\n        data: buffer.toString('base64'),\n        mimeType: 'application/x-ipynb+json',\n        fileName: 'generated_course.ipynb',\n        fileExtension: 'ipynb'\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        0
+      ],
+      "id": "4ed192e4-a7e9-48a4-a428-484734406c4c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        16,
+        160
+      ],
+      "id": "f3718950-9559-4ba1-b316-6a2506238a43",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "vTGketuNUk4FmV7Y",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "5e4b660e-7cdb-4a3b-922b-c253696a4a9b",
+  "activeVersionId": null,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-02-28T11:34:22.518Z",
+      "createdAt": "2026-02-28T11:34:22.518Z",
+      "role": "workflow:owner",
+      "workflowId": "9VNl2TMogjb7SzJJ",
+      "projectId": "nHOmkNA9A0sWDBut"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
