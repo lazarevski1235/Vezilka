@@ -1,0 +1,237 @@
+{
+  "name": "Course generation - main workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\n//Goes through all the files and combines them\n\nconst allTexts = $input.all().map(item => item.json.text).join('\\n\\n---\\n\\n');\n$input.first().json.candidates[0].content.parts[0].text\nreturn [{\n  json: {\n    ...$input.first().json,\n    text: allTexts\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        400
+      ],
+      "id": "e1777837-1687-45db-8b16-554add960c6b",
+      "name": "Combine All Files"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create an extensive, deep-dive course at the {{ $('On form submission1').item.json.level }} level.\n\nSource Material to expand upon:\n{{ $json.text }}\n\nAdditional Information from the user :\n{{ $('On form submission1').item.json['Additional Information'] }}",
+        "options": {
+          "systemMessage": "=You are an expert technical instructor. Your ONLY task is to output a valid Google Colab Jupyter Notebook (.ipynb) in Macedonian.\n\nCRITICAL RULES:\n\nOutput ONLY the raw JSON code.\n\nNEVER use markdown code blocks like ```json or ```.\n\nNEVER include introductory text like \"Here is your course\" or concluding remarks.\n\nEnsure all Macedonian Cyrillic characters are correctly encoded.\n\nThe output must start with { and end with }.\n\nCourse Requirements:\n\nDifficulty: {{ $('On form submission1').item.json.level }}\n\nStructure: \n\t-Include at least 5 Markdown cells with deep explanations and 3 Code cells with exercises.\n\n\t-If there is more than one source they will be SEPARETED WITH ---\n\n\t-If you have more than one source to make course you have to make SECTIONS. For example you have 3 sources \n\twhat is Ai \n\t\t...(text)\n\t---\n\twhat is Rag\n\t\t...(text)\n\t---\n\tHow Agent works\n\t\t...(text)\n\t\n\tYOU HAVE TO MAKE THEM LIKE A SECTION \n\tWhat is AI(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\twhat is Rag(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\tHow Agent works(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\n\t-On the end of the course please make a RANDOM question about the topic that you explained. For example if you had only one file for input that is one question if you had like 3 make 3 question. FOR EACH SECTION OF THE COURSE GIVE ONE QUETION\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        384
+      ],
+      "id": "af8cabbd-f109-4459-bbe9-ec2df98183f5",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "jsCode": "let rawData = $input.first().json.output;\n// $input.first().json.output\nrawData = rawData.replace(/```json/g, '').replace(/```/g, '').trim();\n\nconst buffer = Buffer.from(rawData, 'utf8');\n\nreturn [\n  {\n    json: {\n      fileName: \"generated_course.ipynb\"\n    },\n    binary: {\n      data: {\n        data: buffer.toString('base64'),\n        mimeType: 'application/x-ipynb+json',\n        fileName: 'generated_course.ipynb',\n        fileExtension: 'ipynb'\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        384
+      ],
+      "id": "e44fcc64-a246-4bd6-a860-83c8558e98c2",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        592,
+        560
+      ],
+      "id": "80bccdb6-09ee-4419-9571-38aa14e3dba4",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ZnsnjLqQp5IPkLEF",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "post-form",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -544,
+        400
+      ],
+      "id": "e24724dd-0696-4e5c-a319-852ab96f5156",
+      "name": "Webhook",
+      "webhookId": "44e385ea-1cf0-4a1f-af4a-f6aca539c3c5"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "wTYxL7lpWzqIltmq",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/wTYxL7lpWzqIltmq",
+          "cachedResultName": "Везилка"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        112,
+        400
+      ],
+      "id": "8b51f5c7-96ac-4251-8d92-f202cc53f518",
+      "name": "Execute Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst binaryData = item.binary;\nconst notes = item.json.notes; // or whatever your notes field is called\n\nconst items = [];\n\nfor (const key of Object.keys(binaryData)) {\n  items.push({\n    json: { notes }, // pass notes along with each file\n    binary: {\n      file: binaryData[key] // normalize to a single \"file\" key\n    }\n  });\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -176,
+        400
+      ],
+      "id": "07a6c3e1-4da6-4faf-81bd-c8a88f05f25c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "content": "Napraveno do execute workflow (povikuvanje na child workflow za parsiranje na sodrzhinata na pratenite fajlovi)",
+        "height": 128,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        192,
+        240
+      ],
+      "typeVersion": 1,
+      "id": "0d0f8122-4d02-4694-addc-62335f1d26b6",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Testirano so username.github.io kade shto za forma e zemena od lea/index.html"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -592,
+        208
+      ],
+      "typeVersion": 1,
+      "id": "e3079db8-5a75-4e45-a00c-0a0796d81a01",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Combine All Files": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow": {
+      "main": [
+        [
+          {
+            "node": "Combine All Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Execute Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9c4cdd81-b5cc-4735-be74-a414d1aaf09b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5ff2b29ff59393f4348ce441457d7055afd61c2cfd6a64dfa6cae5c69cd77f3a"
+  },
+  "id": "njPUHYD9lvHmcmS8",
+  "tags": []
+}
