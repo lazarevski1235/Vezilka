@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\n//Goes through all the files and combines them\n\nconst allTexts = $input.all().map(item => item.json.text).join('\\n\\n---\\n\\n');\n$input.first().json.candidates[0].content.parts[0].text\nreturn [{\n  json: {\n    ...$input.first().json,\n    text: allTexts\n  }\n}];"
+        "jsCode": "const allTexts = $input.all()\n  .map(item => item.json.candidates?.[0]?.content?.parts?.[0]?.text ?? '')\n  .join('\\n\\n---\\n\\n');\n\nreturn [{\n  json: {\n    text: allTexts\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -17,16 +17,16 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Create an extensive, deep-dive course at the {{ $('On form submission1').item.json.level }} level.\n\nSource Material to expand upon:\n{{ $json.text }}\n\nAdditional Information from the user :\n{{ $('On form submission1').item.json['Additional Information'] }}",
+        "text": "=Create an extensive, deep-dive course at the {{ $('Webhook').item.json.body.difficulty }} level. When making the course, use deeplearning.ai, coursera, edX, Udacity as main sources for the structure of the course and expand upon {{ $json.text }} for the content of the course.\n\nAdditional Information from the user :\n{{ $('Webhook').item.json.body.comments }}",
         "options": {
-          "systemMessage": "=You are an expert technical instructor. Your ONLY task is to output a valid Google Colab Jupyter Notebook (.ipynb) in Macedonian.\n\nCRITICAL RULES:\n\nOutput ONLY the raw JSON code.\n\nNEVER use markdown code blocks like ```json or ```.\n\nNEVER include introductory text like \"Here is your course\" or concluding remarks.\n\nEnsure all Macedonian Cyrillic characters are correctly encoded.\n\nThe output must start with { and end with }.\n\nCourse Requirements:\n\nDifficulty: {{ $('On form submission1').item.json.level }}\n\nStructure: \n\t-Include at least 5 Markdown cells with deep explanations and 3 Code cells with exercises.\n\n\t-If there is more than one source they will be SEPARETED WITH ---\n\n\t-If you have more than one source to make course you have to make SECTIONS. For example you have 3 sources \n\twhat is Ai \n\t\t...(text)\n\t---\n\twhat is Rag\n\t\t...(text)\n\t---\n\tHow Agent works\n\t\t...(text)\n\t\n\tYOU HAVE TO MAKE THEM LIKE A SECTION \n\tWhat is AI(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\twhat is Rag(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\tHow Agent works(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\n\t-On the end of the course please make a RANDOM question about the topic that you explained. For example if you had only one file for input that is one question if you had like 3 make 3 question. FOR EACH SECTION OF THE COURSE GIVE ONE QUETION\n"
+          "systemMessage": "=You are an expert technical instructor. Your ONLY task is to output a valid Google Colab Jupyter Notebook (.ipynb) in Macedonian.\n\nCRITICAL RULES:\n\nOutput ONLY the raw JSON code.\n\nNEVER use markdown code blocks like ```json or ```.\n\nNEVER include introductory text like \"Here is your course\" or concluding remarks.\n\nEnsure all Macedonian Cyrillic characters are correctly encoded.\n\nThe output must start with { and end with }.\n\nCourse Requirements:\n\nDifficulty: {{ $('Webhook').item.json.body.difficulty }}\n\nStructure: \n\t-Include at least 5 Markdown cells with deep explanations and 3 Code cells with exercises.\n\n\t-If there is more than one source they will be SEPARETED WITH ---\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        672,
-        384
+        1344,
+        400
       ],
       "id": "af8cabbd-f109-4459-bbe9-ec2df98183f5",
       "name": "AI Agent1"
@@ -38,30 +38,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1056,
-        384
+        1776,
+        368
       ],
       "id": "e44fcc64-a246-4bd6-a860-83c8558e98c2",
       "name": "Code in JavaScript1"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        592,
-        560
-      ],
-      "id": "80bccdb6-09ee-4419-9571-38aa14e3dba4",
-      "name": "Google Gemini Chat Model1",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "ZnsnjLqQp5IPkLEF",
-          "name": "Google Gemini(PaLM) Api account 2"
-        }
-      }
     },
     {
       "parameters": {
@@ -86,7 +67,7 @@
           "value": "wTYxL7lpWzqIltmq",
           "mode": "list",
           "cachedResultUrl": "/workflow/wTYxL7lpWzqIltmq",
-          "cachedResultName": "Везилка"
+          "cachedResultName": "File contentent extraction - child workflow"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -125,21 +106,6 @@
     },
     {
       "parameters": {
-        "content": "Napraveno do execute workflow (povikuvanje na child workflow za parsiranje na sodrzhinata na pratenite fajlovi)",
-        "height": 128,
-        "width": 336
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        192,
-        240
-      ],
-      "typeVersion": 1,
-      "id": "0d0f8122-4d02-4694-addc-62335f1d26b6",
-      "name": "Sticky Note"
-    },
-    {
-      "parameters": {
         "content": "Testirano so username.github.io kade shto za forma e zemena od lea/index.html"
       },
       "type": "n8n-nodes-base.stickyNote",
@@ -150,6 +116,74 @@
       "typeVersion": 1,
       "id": "e3079db8-5a75-4e45-a00c-0a0796d81a01",
       "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        576
+      ],
+      "id": "80bccdb6-09ee-4419-9571-38aa14e3dba4",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ZnsnjLqQp5IPkLEF",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Seperate the given text in logical sections, following the given instructions.\n\nSource material:\n{{ $json.text }}",
+        "options": {
+          "systemMessage": "You are an expert technical instructor. Your ONLY task is to divide the given input text into logical teaching sections and output them as valid JSON, with all content written in Macedonian (Cyrillic).\n\nOUTPUT FORMAT\nReturn a JSON array matching exactly this schema:\n[\n  {\n    \"section_number\": 1,\n    \"header\": \"Наслов на секцијата\",\n    \"summary\": \"Кратко резиме од 1-2 реченици за што се работи во оваа секција.\",\n    \"relevant_content\": \"Целиот релевантен текст од изворот кој припаѓа на оваа секција, зачуван од збор до збор.\"\n  }\n]\n\nCRITICAL RULES\n- Output ONLY raw JSON. No markdown fences (```), no prose before or after.\n- The output MUST start with [ and end with ].\n- All string values must be in Macedonian Cyrillic and properly UTF-8 encoded.\n- Escape internal quotes and newlines correctly so the JSON parses.\n\nSECTIONING RULES\n- Produce sections depending on the natural structure of the input and given content. \n- Each section should be a coherent teaching unit, depending on the given level.\n- If the input contains multiple sources separated by \"---\", treat them as one combined body of text and section across all of it; do not create one section per source.\n- Preserve all technically important content in \"relevant_content\" — this text will be used downstream to generate a Jupyter notebook, so do not summarize it away."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        400
+      ],
+      "id": "5166b2be-62dd-422b-b7d7-4561869b4c33",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        544,
+        608
+      ],
+      "id": "d818ded7-585d-4aed-b9cb-016377767574",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "M2vCQml93FH4GNHy",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the AI's string output into an actual array\nconst raw = $input.first().json.output;\nconst sections = JSON.parse(raw);\n\n// Return one n8n item per section\nreturn sections.map(section => ({ json: section }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        400
+      ],
+      "id": "2821d6a2-1f54-43d0-a6e4-0dce7efdb3ee",
+      "name": "Section Parser"
     }
   ],
   "pinData": {},
@@ -158,7 +192,7 @@
       "main": [
         [
           {
-            "node": "AI Agent1",
+            "node": "AI Agent",
             "type": "main",
             "index": 0
           }
@@ -171,17 +205,6 @@
           {
             "node": "Code in JavaScript1",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Gemini Chat Model1": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent1",
-            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -219,6 +242,50 @@
           }
         ]
       ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Section Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Section Parser": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -227,7 +294,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "9c4cdd81-b5cc-4735-be74-a414d1aaf09b",
+  "versionId": "33df1b80-bbdb-4b30-9dae-b54570c1238a",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "5ff2b29ff59393f4348ce441457d7055afd61c2cfd6a64dfa6cae5c69cd77f3a"
