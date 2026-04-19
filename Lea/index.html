@@ -36,9 +36,9 @@
 
 <span class="field-label">Ниво на тежина</span>
 <div class="diff-group">
-    <button class="diff-btn" onclick="selectDiff(this)" data-value="Почетно">Почетно</button>
-    <button class="diff-btn" onclick="selectDiff(this)" data-value="Средно">Средно</button>
-    <button class="diff-btn" onclick="selectDiff(this)" data-value="Напредно">Напредно</button>
+    <button class="diff-btn" onclick="selectDiff(this)" data-value="beginner">Почетно</button>
+    <button class="diff-btn" onclick="selectDiff(this)" data-value="intermediate">Средно</button>
+    <button class="diff-btn" onclick="selectDiff(this)" data-value="expert">Напредно</button>
 </div>
 
 <span class="field-label">Датотеки</span>
@@ -53,7 +53,7 @@
 
 <script>
     // ✅ ЗАЛЕПИ ЈА ТВОЈАТА N8N WEBHOOK URL ОВДЕ
-    const WEBHOOK_URL = "http://localhost:5678/webhook-test/fe2e9932-b386-4f7d-8890-d465e77904d9";
+    const WEBHOOK_URL = "http://localhost:5678/webhook-test/post-form";
 
     let count = 0;
     let selectedDifficulty = "";
