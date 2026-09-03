@@ -1,0 +1,1790 @@
+{
+  "name": "Course generation - Antonio",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Generate course",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "level",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "beginner"
+                  },
+                  {
+                    "option": "intermediate"
+                  },
+                  {
+                    "option": "advanced"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Course materials",
+              "fieldType": "file",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Additional Information"
+            },
+            {
+              "fieldLabel": "Document to follow",
+              "fieldType": "file"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -1040,
+        880
+      ],
+      "id": "d5823aed-0612-4c81-923a-41104a90a76b",
+      "name": "On form submission",
+      "webhookId": "349dc2d9-cdb1-4195-bd5c-7f4dc353d28e"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create an extensive, deep-dive course at the {{ $('On form submission').item.json.level }} level.\n\nSource Material to expand upon:\n{{ $json.text }}\n\nAdditional Information from the user :\n{{ $('On form submission').item.json['Additional Information'] }}\n\nREMINDER — BEFORE YOU OUTPUT ANYTHING, REREAD THESE RULES AND FOLLOW THEM:\n{{ $json.rulesText }}\nKeep in mind to follow everything.\n\nYouTube Resources to embed - add each link at the END of its matching section:\n{{ $json.youtubeLinks }}\n\nFormat each YouTube link in the section as:\n[Watch on YouTube](URL)",
+        "options": {
+          "systemMessage": "=You are an expert technical instructor. Your ONLY task is to output a valid Google Colab Jupyter Notebook (.ipynb) in Macedonian.\n\nCRITICAL RULES:\n- Output ONLY raw JSON starting with { and ending with }\n- ALL newlines inside JSON string values MUST be written as \\n (escaped)\n- NEVER use actual line breaks inside JSON string values\n- NEVER wrap output in ```json or ``` blocks\n- Every string value must be on one line or use \\n for line breaks\n- The JSON must be parseable by JSON.parse() without any modifications\n\n\nCourse Requirements:\n\nDifficulty: {{ $('On form submission').item.json.level }}\n\nStructure: \n\t-You have these YouTube videos to embed - one per section at the end of each section:\n\t{{ $json.youtubeLinks }}\n\n\t-For each section find its matching YouTube URL from above and add at the end:\n\t[Watch on YouTube](URL)\n\n\t-Include at least 5 Markdown cells with deep explanations and 3 Code cells with exercises.\n\n\t-If there is more than one source they will be SEPARETED WITH ---\n\n\t-If you have more than one source to make course you have to make SECTIONS. For example you have 3 sources \n\twhat is Ai \n\t\t...(text)\n\t---\n\twhat is Rag\n\t\t...(text)\n\t---\n\tHow Agent works\n\t\t...(text)\n\t\n\tYOU HAVE TO MAKE THEM LIKE A SECTION \n\tWhat is AI(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\twhat is Rag(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\tHow Agent works(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\n\t-On the end of the course please make a RANDOM question about the topic that you explained. For example if you had only one file for input that is one question if you had like 3 make 3 question. FOR EACH SECTION OF THE COURSE GIVE ONE QUETION\n\n\nHOW TO USE YOUR TOOLS:\n\nWIKIPEDIA TOOL (STRICT PROTOCOL):\n- QUERY LIMIT: You MUST only send 1-3 keywords (e.g., \"Artificial Intelligence\" or \"Diabetes\"). \n- NEVER send full sentences, questions, or long descriptions to Wikipedia.\n- Use it ONLY for definitions of technical/medical terms or verified general knowledge.\n- DO NOT use it for information already clearly explained in the uploaded files.\n\n=== MANDATORY RULES — READ FIRST ===\n{{ $json.rulesText }}\n=== END MANDATORY RULES ===\n\nVIOLATING THESE RULES IS NOT ALLOWED. CHECK THEM BEFORE WRITING ANYTHING.\n{{ $json.rulesText }}\nIf you need overwrite something overwrite do as this document says."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1408,
+        512
+      ],
+      "id": "8bb10459-44c1-488d-87f4-3584fb40fc2e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "let rawData = $input.first().json.output;\n// $input.first().json.output\nrawData = rawData.replace(/```json/g, '').replace(/```/g, '').trim();\n\nconst buffer = Buffer.from(rawData, 'utf8');\n\nreturn [\n  {\n    json: {\n      fileName: \"generated_course.ipynb\"\n    },\n    binary: {\n      data: {\n        data: buffer.toString('base64'),\n        mimeType: 'application/x-ipynb+json',\n        fileName: 'generated_course.ipynb',\n        fileExtension: 'ipynb'\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        496
+      ],
+      "id": "02cf9b07-2d81-41f6-998c-9566311a42ff",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        976
+      ],
+      "id": "2739f49b-581d-4f99-944b-d938ee90d108",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "XtkODY1FZNMXOVvF",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\nconst allItems = $input.all();\nconst firstItem = allItems[0];\nconst binaryData = firstItem.binary || {};\nconst keys = Object.keys(binaryData);\nconst materialKeys = keys.slice(0, -1);\nconst items = [];\n\nfor (const key of materialKeys) {\n  const file = binaryData[key];\n  items.push({\n    json: {\n      filename: String(file.fileName || key),\n      mimetype: String(file.mimeType || ''),\n    },\n    binary: {\n      Course_materials: file\n    }\n  });\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        336
+      ],
+      "id": "dfc36686-41f3-4c9c-9a75-5df6f4e81546",
+      "name": "Rename Files"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\nconst allItems = $input.all();\n\n// Separate course materials from rules text\nconst materialTexts = allItems\n  .filter(item => item.json.text && !item.json.rulesText)\n  .map(item => item.json.text)\n  .join('\\n\\n---\\n\\n');\n\nconst rulesText = allItems\n  .filter(item => item.json.rulesText)\n  .map(item => item.json.rulesText)\n  .join('');\n\nreturn [{\n  json: {\n    text: materialTexts\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        272
+      ],
+      "id": "12192bcf-f59d-49a0-8635-2b9b7151fc4d",
+      "name": "Combine All Files"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        1632,
+        736
+      ],
+      "id": "e9c8768f-d0eb-481f-b969-0c48d0fe10e1",
+      "name": "Wikipedia"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst agentOutput = input.output || input.notebookJson || \"\";\nconst attempt = (input.attempt || 0) + 1;\n\n// Clean JSON\nlet rawJson = agentOutput.trim().replace(/^```(?:json)?\\n?/, \"\").replace(/\\n?```$/, \"\").trim();\n\n// Parse\nlet notebook;\ntry {\n  notebook = JSON.parse(rawJson);\n} catch (e) {\n  return [{ json: { valid: false, notebookJson: rawJson, errors: [`Not valid JSON: ${e.message}`], attempt } }];\n}\n\nif (!notebook.cells || !Array.isArray(notebook.cells)) {\n  return [{ json: { valid: false, notebookJson: rawJson, errors: [\"Missing cells array\"], attempt } }];\n}\n\n// Check only code cells — is the Python runnable?\nconst errors = [];\n\nfor (const [i, cell] of notebook.cells.entries()) {\n  if (cell.cell_type !== \"code\") continue;\n\n  const code = (cell.source || []).join(\"\");\n\n  // Python 2 print (won't run in Python 3)\n  if (/print\\s+[\"']/.test(code))\n    errors.push(`Cell ${i}: Python 2 print — use print()`);\n\n  // Unfilled placeholders like <YOUR CODE HERE>\n  if (/<[A-Z\\s]+>/.test(code))\n    errors.push(`Cell ${i}: unfilled placeholder`);\n\n  // Unmatched brackets (simplified — catches obvious broken syntax)\n  let depth = { p: 0, b: 0, c: 0 };\n  for (const ch of code) {\n    if (ch === \"(\") depth.p++; else if (ch === \")\") depth.p--;\n    if (ch === \"[\") depth.b++; else if (ch === \"]\") depth.b--;\n    if (ch === \"{\") depth.c++; else if (ch === \"}\") depth.c--;\n  }\n  if (depth.p !== 0) errors.push(`Cell ${i}: unmatched parentheses`);\n  if (depth.b !== 0) errors.push(`Cell ${i}: unmatched square brackets`);\n  if (depth.c !== 0) errors.push(`Cell ${i}: unmatched curly braces`);\n}\n\n// Force pass after 3 attempts to break infinite loop\nif (errors.length > 0 && attempt >= 3) {\n  return [{ json: { valid: true, notebookJson: JSON.stringify(notebook), errors: [], attempt, forcedPass: true } }];\n}\n\nif (errors.length > 0) {\n  return [{ json: { valid: false, notebookJson: JSON.stringify(notebook), errors, attempt } }];\n}\n\nreturn [{ json: { valid: true, notebookJson: JSON.stringify(notebook), errors: [], attempt } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        1856
+      ],
+      "id": "3db2393c-693f-4ecb-a490-6a601fd65e7b",
+      "name": "Code Checker"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0ef771b9-c0fa-4b9f-97c9-0c052f4443d0",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -560,
+        1856
+      ],
+      "id": "24bfb66d-4723-4b96-9b0f-d7c9513321db",
+      "name": "Is Code Valid"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        2288
+      ],
+      "id": "445693a1-abe8-4b11-b1e5-b5c467744112",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "XtkODY1FZNMXOVvF",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are given a Jupyter Notebook JSON that has Python code cell errors.\n\nErrors found:\n{{ $json.errors.join('\\n') }}\n\nNotebook JSON to fix:\n{{ $json.notebookJson }}\n\nFix ONLY the broken code cells. Do not change markdown cells or the course content.\nReturn the complete corrected notebook JSON.",
+        "options": {
+          "systemMessage": "You are a Python and Jupyter Notebook expert.\nYour ONLY job is to fix broken Python code cells in a .ipynb notebook JSON.\n\nCRITICAL RULES:\n- Output ONLY raw JSON. No markdown fences, no explanation.\n- Output must start with { and end with }\n- Fix syntax errors, unmatched brackets, Python 2 print statements\n- Keep all Macedonian Cyrillic text in markdown cells exactly as-is\n- Do NOT rewrite the course content — only fix code cells\n- All code must be valid Python 3"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -528,
+        2064
+      ],
+      "id": "cdf77634-a517-4943-a257-074d3fa8a6e7",
+      "name": "AI Code Fixer"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        560,
+        512
+      ],
+      "id": "c7334ceb-2928-496d-b3f4-53504797ef45",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const binaryData = $input.item.binary || {};\nconst keys = Object.keys(binaryData);\n\n// Last file is always the rules file\n// If only 1 file or no files, no rules exist\nif (keys.length < 2) {\n  return [{ json: { ...$input.item.json, rulesText: ' ' } }];\n}\n\nconst lastKey = keys[keys.length - 1];\nconst lastFile = binaryData[lastKey];\n\nreturn [{\n  json: $input.item.json,\n  binary: {\n    Document_to_follow: lastFile\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        720
+      ],
+      "id": "3cee9dcf-bc0d-489c-9228-701f58201094",
+      "name": "Get Rules Text"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Document_to_follow",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        640
+      ],
+      "id": "d5570f7a-d31c-4c89-8d49-53f33e5fd826",
+      "name": "Extract Rules Text"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.mimetype }}",
+                    "rightValue": "application/pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ff33315b-9512-4c90-abad-5ccfa0f5d9d9"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d4a1756c-3fcd-403d-ab58-384a896ae513",
+                    "leftValue": "={{ $json.mimetype }}",
+                    "rightValue": "text/csv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f4ce9a2b-d496-4c0a-961b-d31384e0bb83",
+                    "leftValue": "={{ $json.mimetype }}",
+                    "rightValue": "application/json",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "fc7af125-6ba8-43f2-945f-bad89fa83689",
+                    "leftValue": "={{ $json.mimetype }}",
+                    "rightValue": "text/plain",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -272,
+        208
+      ],
+      "id": "24b60349-0da5-42f3-904d-8908569587e4",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Course_materials",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1362257f-9367-4208-ba12-8dec6d1b845c",
+      "name": "Extract from PDF"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "={{ $json.filename }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        176
+      ],
+      "id": "b4ccc6fc-0dcf-43d8-8ca0-113834880b46",
+      "name": "Extract from CSV"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "binaryPropertyName": "={{ $json.filename }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        336
+      ],
+      "id": "e3c41546-dac0-41bd-9047-d9435d61a7bb",
+      "name": "Extract from JSON"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "Course_materials",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        496
+      ],
+      "id": "3a68b02e-5738-43f8-bd35-cf82ecef1bbe",
+      "name": "Extract from TXT"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\nconst allItems = $input.all();\nconst firstItem = allItems[0];\nconst binaryData = firstItem.binary || {};\nconst keys = Object.keys(binaryData);\nconst items = [];\n\nfor (const key of keys) {\n  const file = binaryData[key];\n  items.push({\n    json: {\n      filename: String(file.fileName || key),\n      mimetype: String(file.mimeType || ''),\n    },\n    binary: {\n      Course_materials: file\n    }\n  });\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -464,
+        1376
+      ],
+      "id": "6a072e52-03b3-4d34-8494-403b9386ffba",
+      "name": "Rename Files1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\nconst allItems = $input.all();\n\n// Separate course materials from rules text\nconst materialTexts = allItems\n  .filter(item => item.json.text && !item.json.rulesText)\n  .map(item => item.json.text)\n  .join('\\n\\n---\\n\\n');\n\nconst rulesText = allItems\n  .filter(item => item.json.rulesText)\n  .map(item => item.json.rulesText)\n  .join('');\n\nreturn [{\n  json: {\n    text: materialTexts,\n    rulesText: rulesText || ''\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        1360
+      ],
+      "id": "7fc526c7-7a68-4ac5-9b44-5335fa6707c2",
+      "name": "Combine All Files1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.mimetype }}",
+                    "rightValue": "application/pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ff33315b-9512-4c90-abad-5ccfa0f5d9d9"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d4a1756c-3fcd-403d-ab58-384a896ae513",
+                    "leftValue": "={{ $json.mimetype }}",
+                    "rightValue": "text/csv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f4ce9a2b-d496-4c0a-961b-d31384e0bb83",
+                    "leftValue": "={{ $json.mimetype }}",
+                    "rightValue": "application/json",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "fc7af125-6ba8-43f2-945f-bad89fa83689",
+                    "leftValue": "={{ $json.mimetype }}",
+                    "rightValue": "text/plain",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        1344
+      ],
+      "id": "cf7a4308-aa4b-4bfb-8621-0395120ba4bb",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Course_materials",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        1088
+      ],
+      "id": "c359292d-9ebf-4b3c-8cc4-d4f1d762f26b",
+      "name": "Extract from PDF1"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "={{ $json.filename }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        1264
+      ],
+      "id": "25d25805-9b39-4bdb-a2b8-2376f7e2c691",
+      "name": "Extract from CSV1"
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "binaryPropertyName": "={{ $json.filename }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        1456
+      ],
+      "id": "9c7425e2-8784-4118-82c0-5b2285b82008",
+      "name": "Extract from JSON1"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "Course_materials",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        1632
+      ],
+      "id": "70124374-c326-4088-a51d-fa8fa3c704a2",
+      "name": "Extract from TXT1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create an extensive, deep-dive course at the {{ $('On form submission').item.json.level }} level.\n\nSource Material to expand upon:\n{{ $json.text }}\n\nAdditional Information from the user :\n{{ $('On form submission').item.json['Additional Information'] }}\n\nYouTube Resources to embed - add each link at the END of its matching section:\n{{ $json.youtubeLinks }}\n\nFormat each YouTube link in the section as:\n[Watch on YouTube](URL)",
+        "options": {
+          "systemMessage": "=You are an expert technical instructor. Your ONLY task is to output a valid Google Colab Jupyter Notebook (.ipynb) in Macedonian.\n\nCRITICAL JSON FORMATTING RULES:\n- Output ONLY raw JSON starting with { and ending with }\n- ALL newlines inside JSON string values MUST be written as \\n (escaped)\n- NEVER use actual line breaks inside JSON string values\n- NEVER wrap output in ```json or ``` blocks\n- Every string value must be on one line or use \\n for line breaks\n- The JSON must be parseable by JSON.parse() without any modifications\n\nCourse Requirements:\n\nDifficulty: {{ $('On form submission').item.json.level }}\n\nStructure: \n\t-You have these YouTube videos to embed - one per section at the end of each section:\n\t{{ $json.youtubeLinks }}\n\n\t-For each section find its matching YouTube URL from above and add at the end:\n\t[Watch on YouTube](URL)\n\t\n\t-Include at least 5 Markdown cells with deep explanations and 3 Code cells with exercises.\n\n\t-If there is more than one source they will be SEPARETED WITH ---\n\n\t-If you have more than one source to make course you have to make SECTIONS. For example you have 3 sources \n\twhat is Ai \n\t\t...(text)\n\t---\n\twhat is Rag\n\t\t...(text)\n\t---\n\tHow Agent works\n\t\t...(text)\n\t\n\tYOU HAVE TO MAKE THEM LIKE A SECTION \n\tWhat is AI(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\twhat is Rag(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\tHow Agent works(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\n\t-On the end of the course please make a RANDOM question about the topic that you explained. For example if you had only one file for input that is one question if you had like 3 make 3 question. FOR EACH SECTION OF THE COURSE GIVE ONE QUETION\n\n\nHOW TO USE YOUR TOOLS:\n\nWIKIPEDIA TOOL (STRICT PROTOCOL):\n- QUERY LIMIT: You MUST only send 1-3 keywords (e.g., \"Artificial Intelligence\" or \"Diabetes\"). \n- NEVER send full sentences, questions, or long descriptions to Wikipedia.\n- Use it ONLY for definitions of technical/medical terms or verified general knowledge.\n- DO NOT use it for information already clearly explained in the uploaded files."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1216,
+        1360
+      ],
+      "id": "b37f07cd-cb33-434e-9a94-c991403a1902",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "jsCode": "let rawData = $input.first().json.output;\n// $input.first().json.output\nrawData = rawData.replace(/```json/g, '').replace(/```/g, '').trim();\n\nconst buffer = Buffer.from(rawData, 'utf8');\n\nreturn [\n  {\n    json: {\n      fileName: \"generated_course.ipynb\"\n    },\n    binary: {\n      data: {\n        data: buffer.toString('base64'),\n        mimeType: 'application/x-ipynb+json',\n        fileName: 'generated_course.ipynb',\n        fileExtension: 'ipynb'\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        1392
+      ],
+      "id": "099a7227-bd81-428e-b49f-c8415d4ea2e2",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        1776
+      ],
+      "id": "4a397251-8b99-445a-9e3c-cf6c8ed9b8f2",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "XtkODY1FZNMXOVvF",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        1568
+      ],
+      "id": "23c78760-f909-4a18-a309-957be5ab0ebb",
+      "name": "Wikipedia1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d2c46669-5283-48c6-9b49-65b93ae1e7d4",
+              "leftValue": "={{ $json[\"Document to follow\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -688,
+        880
+      ],
+      "id": "d8dfe507-af93-403d-9ec3-5da575c171b0",
+      "name": "Check document to follow"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        496,
+        1568
+      ],
+      "id": "c83ba24b-9da1-4c5b-a7b0-69ab4e1dc22e",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "XtkODY1FZNMXOVvF",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\nconst inputData = $input.first().json;\nconst originalText = $('Combine All Files1').first().json.text;\n\n// youtubeLinks is already a parsed array, not a string\nconst youtubeLinks = inputData.youtubeLinks || [];\n\nconst linksText = youtubeLinks\n  .map(item => `Section \"${item.section}\": ${item.url}`)\n  .join('\\n');\n\nreturn [{\n  json: {\n    text: originalText,\n    youtubeLinks: linksText\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        1360
+      ],
+      "id": "d2f12221-e739-4ab4-b99a-cdff9aeb05d2",
+      "name": "Combine Data With URLs"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Read this content carefully.\nThe content may have multiple documents separated by ---\nCount ONLY the number of documents separated by --- \nIf there is NO --- separator, there is only ONE document = ONE topic.\nReturn ONLY a JSON array with one search query per document:\n[\"topic name\"]\nIf only one document: return array with ONE item only.\nReturn ONLY the array, nothing else.\n\nContent:\n{{ $json.text }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        608,
+        1360
+      ],
+      "id": "372c7cdb-3f5a-4446-afa8-ccf717ba71e3",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\nlet raw = $input.first().json.text;\nraw = raw.replace(/```json/g,'').replace(/```/g,'').trim();\n\nlet topics = [];\ntry {\n  topics = JSON.parse(raw);\n} catch(e) {\n  topics = [];\n}\n// Smeni go svoj apiKey\nreturn topics.map(topic => ({\n  json: {\n    query: topic,\n    url: `https://serpapi.com/search.json?q=${encodeURIComponent(topic + ' youtube')}&tbm=vid&api_key=df34ac473a41aba1af5868124849522f1e5ff9c9a0fcf95722a33909867f19c4`\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        1616
+      ],
+      "id": "ea83fca8-9dad-4db3-add0-402b241a75a6",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        1824
+      ],
+      "id": "18a6d8c1-ac30-4b74-8692-b5944da9837e",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\nconst results = $input.all();\n\nconst links = results\n  .map(item => {\n    const videos = item.json.video_results || [];\n    const firstVideo = videos.find(v => \n      v.link && v.link.includes('youtube.com/watch')\n    );\n    return {\n      section: item.json.search_parameters?.q?.replace(' youtube','').trim() || 'Topic',\n      url: firstVideo ? firstVideo.link : null\n    };\n  })\n  .filter(item => item.url !== null);\n\nreturn [{ json: { youtubeLinks: links } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        1824
+      ],
+      "id": "6015d659-dda9-4f66-a42c-c2cec6abaeea",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\nconst inputData = $input.first().json;\nconst originalText = $('Combine All Files').first().json.text;\n\nconst youtubeLinks = inputData.youtubeLinks || [];\nconst linksText = youtubeLinks\n  .map(item => `Section \"${item.section}\": ${item.url}`)\n  .join('\\n');\n\nreturn [{\n  json: {\n    text: originalText,\n    rulesText: $('Merge').first().json.data || '',\n    youtubeLinks: linksText\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        512
+      ],
+      "id": "44752875-47ee-4cfa-9cd6-11b1f535af91",
+      "name": "Combine Data With URLs1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Read this content carefully.\nThe content may have multiple documents separated by ---\nCount ONLY the number of documents separated by --- \nIf there is NO --- separator, there is only ONE document = ONE topic.\nReturn ONLY a JSON array with one search query per document:\n[\"topic name\"]\nIf only one document: return array with ONE item only.\nReturn ONLY the array, nothing else.\n\nContent:\n{{ $json.text }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        800,
+        512
+      ],
+      "id": "955cfc3c-b839-4012-87f8-b860030423bb",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\nlet raw = $input.first().json.text;\nraw = raw.replace(/```json/g,'').replace(/```/g,'').trim();\n\nlet topics = [];\ntry {\n  topics = JSON.parse(raw);\n} catch(e) {\n  topics = [];\n}\n\nreturn topics.map(topic => ({\n  json: {\n    query: topic,\n    url: `https://serpapi.com/search.json?q=${encodeURIComponent(topic + ' youtube')}&tbm=vid&api_key=df34ac473a41aba1af5868124849522f1e5ff9c9a0fcf95722a33909867f19c4`\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        784
+      ],
+      "id": "431d135d-f329-473e-a32b-6ac65a0eb05a",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        864,
+        992
+      ],
+      "id": "3c84406d-46a7-41b5-9b1a-edf3e386ffd2",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-nocheck\nconst results = $input.all();\n\nconst links = results\n  .map(item => {\n    const videos = item.json.video_results || [];\n    const firstVideo = videos.find(v => \n      v.link && v.link.includes('youtube.com/watch')\n    );\n    return {\n      section: item.json.search_parameters?.q?.replace(' youtube','').trim() || 'Topic',\n      url: firstVideo ? firstVideo.link : null\n    };\n  })\n  .filter(item => item.url !== null);\n\nreturn [{ json: { youtubeLinks: links } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        992
+      ],
+      "id": "4e6c1bb6-ee16-4d02-9be9-8ed6ae7c673a",
+      "name": "Code in JavaScript5"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        656,
+        720
+      ],
+      "id": "71dd4b48-be88-49bb-9621-decf78439d58",
+      "name": "Google Gemini Chat Model4",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "XtkODY1FZNMXOVvF",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "=Document_to_follow",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        800
+      ],
+      "id": "b989d82f-a222-41df-ac91-b0f2911ac4e2",
+      "name": "Extract from TXT2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0ff76425-64df-4389-bbe6-c630de6c7fc6",
+              "leftValue": "={{ $json[\"Document to follow\"][0].mimetype }}",
+              "rightValue": "application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -304,
+        720
+      ],
+      "id": "caf0f680-bc9f-4193-99a5-0c269d217bd3",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "message": "Change "
+      },
+      "type": "n8n-nodes-base.n8nTrainingCustomerMessenger",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        2032
+      ],
+      "id": "44b84255-4877-4343-a77f-77b33772f15c",
+      "name": "Customer Messenger (n8n training)"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        1536,
+        1792
+      ],
+      "id": "889d1eda-ec9b-4914-beae-09eb09e4eb73",
+      "name": "When chat message received",
+      "webhookId": "e35172e1-18ba-4a1f-aaa8-d432f292557d"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2320,
+        608
+      ],
+      "id": "e07c94cb-b7e9-48c7-a69d-346b82d07ab7",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0083cfab-ee89-4c65-9278-a07833f90390",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "3d471df0-bd0d-4718-992e-0f646df19dc7",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "Done",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1984,
+        896
+      ],
+      "id": "6f9a2384-c7a2-4cae-8a42-30a22875e557",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Implement the following changes to the final document.\n\nSuggested changes:\n{{ $('When chat message received').item.json.chatInput }}\n\nExisting document:\n",
+        "options": {
+          "systemMessage": "You are an expert technical instructor. Your ONLY task is to output a valid Google Colab Jupyter Notebook (.ipynb) in Macedonian.\n\nCRITICAL RULES:\n- Output ONLY raw JSON starting with { and ending with }\n- ALL newlines inside JSON string values MUST be written as \\n (escaped)\n- NEVER use actual line breaks inside JSON string values\n- NEVER wrap output in ```json or ``` blocks\n- Every string value must be on one line or use \\n for line breaks\n- The JSON must be parseable by JSON.parse() without any modifications\n\n\nCourse Requirements:\n\nDifficulty: {{ $('On form submission').item.json.level }}\n\nStructure: \n\t-You have these YouTube videos to embed - one per section at the end of each section:\n\t{{ $json.youtubeLinks }}\n\n\t-For each section find its matching YouTube URL from above and add at the end:\n\t[Watch on YouTube](URL)\n\n\t-Include at least 5 Markdown cells with deep explanations and 3 Code cells with exercises.\n\n\t-If there is more than one source they will be SEPARETED WITH ---\n\n\t-If you have more than one source to make course you have to make SECTIONS. For example you have 3 sources \n\twhat is Ai \n\t\t...(text)\n\t---\n\twhat is Rag\n\t\t...(text)\n\t---\n\tHow Agent works\n\t\t...(text)\n\t\n\tYOU HAVE TO MAKE THEM LIKE A SECTION \n\tWhat is AI(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\twhat is Rag(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\tHow Agent works(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\n\t-On the end of the course please make a RANDOM question about the topic that you explained. For example if you had only one file for input that is one question if you had like 3 make 3 question. FOR EACH SECTION OF THE COURSE GIVE ONE QUETION\n\n\nHOW TO USE YOUR TOOLS:\n\nWIKIPEDIA TOOL (STRICT PROTOCOL):\n- QUERY LIMIT: You MUST only send 1-3 keywords (e.g., \"Artificial Intelligence\" or \"Diabetes\"). \n- NEVER send full sentences, questions, or long descriptions to Wikipedia.\n- Use it ONLY for definitions of technical/medical terms or verified general knowledge.\n- DO NOT use it for information already clearly explained in the uploaded files.\n\n=== MANDATORY RULES — READ FIRST ===\n{{ $json.rulesText }}\n=== END MANDATORY RULES ===\n\nVIOLATING THESE RULES IS NOT ALLOWED. CHECK THEM BEFORE WRITING ANYTHING.\n{{ $json.rulesText }}\nIf you need overwrite something overwrite do as this document says."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2672,
+        608
+      ],
+      "id": "7767527e-5968-451a-891a-c0fa9ad7d244",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2128,
+        1456
+      ],
+      "id": "2f4ad028-9c12-4e19-9a25-a2aac3dccc1d",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Implement the following changes to the final document.\n\nSuggested changes:\n{{ $('When chat message received').item.json.chatInput }}\n\nExisting document:\n",
+        "options": {
+          "systemMessage": "You are an expert technical instructor. Your ONLY task is to output a valid Google Colab Jupyter Notebook (.ipynb) in Macedonian.\n\nCRITICAL RULES:\n- Output ONLY raw JSON starting with { and ending with }\n- ALL newlines inside JSON string values MUST be written as \\n (escaped)\n- NEVER use actual line breaks inside JSON string values\n- NEVER wrap output in ```json or ``` blocks\n- Every string value must be on one line or use \\n for line breaks\n- The JSON must be parseable by JSON.parse() without any modifications\n\n\nCourse Requirements:\n\nDifficulty: {{ $('On form submission').item.json.level }}\n\nStructure: \n\t-You have these YouTube videos to embed - one per section at the end of each section:\n\t{{ $json.youtubeLinks }}\n\n\t-For each section find its matching YouTube URL from above and add at the end:\n\t[Watch on YouTube](URL)\n\n\t-Include at least 5 Markdown cells with deep explanations and 3 Code cells with exercises.\n\n\t-If there is more than one source they will be SEPARETED WITH ---\n\n\t-If you have more than one source to make course you have to make SECTIONS. For example you have 3 sources \n\twhat is Ai \n\t\t...(text)\n\t---\n\twhat is Rag\n\t\t...(text)\n\t---\n\tHow Agent works\n\t\t...(text)\n\t\n\tYOU HAVE TO MAKE THEM LIKE A SECTION \n\tWhat is AI(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\twhat is Rag(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\tHow Agent works(H1 font large)\n\t\t...(every text in to be smaller than H1)\n\n\t-On the end of the course please make a RANDOM question about the topic that you explained. For example if you had only one file for input that is one question if you had like 3 make 3 question. FOR EACH SECTION OF THE COURSE GIVE ONE QUETION\n\n\nHOW TO USE YOUR TOOLS:\n\nWIKIPEDIA TOOL (STRICT PROTOCOL):\n- QUERY LIMIT: You MUST only send 1-3 keywords (e.g., \"Artificial Intelligence\" or \"Diabetes\"). \n- NEVER send full sentences, questions, or long descriptions to Wikipedia.\n- Use it ONLY for definitions of technical/medical terms or verified general knowledge.\n- DO NOT use it for information already clearly explained in the uploaded files.\n\n=== MANDATORY RULES — READ FIRST ===\n{{ $json.rulesText }}\n=== END MANDATORY RULES ===\n\nVIOLATING THESE RULES IS NOT ALLOWED. CHECK THEM BEFORE WRITING ANYTHING.\n{{ $json.rulesText }}\nIf you need overwrite something overwrite do as this document says."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2480,
+        1456
+      ],
+      "id": "6b1395fa-25e4-4722-9901-f3e8f4dcc614",
+      "name": "AI Agent3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0083cfab-ee89-4c65-9278-a07833f90390",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "3d471df0-bd0d-4718-992e-0f646df19dc7",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "Done",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1776,
+        1808
+      ],
+      "id": "8ddd6d31-36fb-4d5f-8394-58be33fe8c30",
+      "name": "If2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Check document to follow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rename Files": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Files": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Checker": {
+      "main": [
+        [
+          {
+            "node": "Is Code Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Code Valid": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Code Fixer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Code Fixer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Code Fixer": {
+      "main": [
+        [
+          {
+            "node": "Code Checker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Rules Text": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Rules Text": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Extract from PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from CSV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from TXT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from PDF": {
+      "main": [
+        [
+          {
+            "node": "Combine All Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from TXT": {
+      "main": [
+        [
+          {
+            "node": "Combine All Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from JSON": {
+      "main": [
+        [
+          {
+            "node": "Combine All Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from CSV": {
+      "main": [
+        [
+          {
+            "node": "Combine All Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rename Files1": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Extract from PDF1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from CSV1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from JSON1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from TXT1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from PDF1": {
+      "main": [
+        [
+          {
+            "node": "Combine All Files1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from CSV1": {
+      "main": [
+        [
+          {
+            "node": "Combine All Files1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from JSON1": {
+      "main": [
+        [
+          {
+            "node": "Combine All Files1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from TXT1": {
+      "main": [
+        [
+          {
+            "node": "Combine All Files1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Files1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check document to follow": {
+      "main": [
+        [
+          {
+            "node": "Rename Files",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Rules Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rename Files1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Data With URLs": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Combine Data With URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "Combine Data With URLs1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Data With URLs1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Extract Rules Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from TXT2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from TXT2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "bd0973c3-3351-4f5b-919a-06e330d37621",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8a19d8b69b4329dd4c6d6eb140e8c0a6434b7342dfeecd63d79fe2607717230a"
+  },
+  "id": "5AYf8dn7mLtWQELB",
+  "tags": []
+}
